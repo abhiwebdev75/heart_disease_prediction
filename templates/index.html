@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>CardioPredict AI — Heart Disease Predictor</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root{
+      --bg-1:#051622;
+      --bg-2:#0b3a4a;
+      --accent-1:#00c2d1;
+      --accent-2:#7b61ff;
+      --muted:#94a3b8;
+      --card-bg: rgba(255,255,255,0.04);
+      --glass: rgba(255,255,255,0.03);
+    }
+    body{
+      background: linear-gradient(135deg,var(--bg-1) 0%, var(--bg-2) 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color: #e6eef3;
+      padding: 28px;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    /* Heartbeat right-side background - only on desktop */
+    .heart-bg-container {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      z-index: 0;
+      pointer-events: none;
+      width: 340px;
+      height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.88;
+      transition: opacity 0.5s ease-out; /* Added transition for smooth hiding */
+    }
+    /* Style for hiding the heart container */
+    .heart-bg-container.hidden-on-predict {
+      opacity: 0;
+      pointer-events: none;
+    }
+    @media (max-width: 1023px) {
+      .heart-bg-container { display: none;}
+    }
+    @keyframes heartbeat {
+      0% { transform: scale(1);}
+      10% {transform: scale(1.08);}
+      20% {transform: scale(1);}
+      30% {transform: scale(1.05);}
+      40% {transform: scale(1);}
+      100% {transform: scale(1);}
+    }
+    .heartbeat { animation: heartbeat 1.3s infinite;}
+    /* Subtle glass feel for cards */
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.04);
+      box-shadow: 0 8px 30px rgba(3,6,23,0.6), 0 0 32px rgba(123,97,255,0.06);
+      border-radius: 18px;
+      backdrop-filter: blur(6px) saturate(140%);
+    }
+    .muted{ color:var(--muted);}
+    
+    /* --- CUSTOM INPUT STYLES --- */
+    .form-input {
+      display: block;
+      width: 100%;
+      height: 44px;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #e6eef3;
+      background-color: rgba(255,255,255,0.08);
+      background-clip: padding-box;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0.5rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent-1);
+      box-shadow: 0 0 0 3px rgba(0, 194, 209, 0.5);
+    }
+
+    .form-input:hover {
+      border-color: var(--accent-2);
+    }
+
+    /* Red border for validation errors */
+    .form-input.border-red-500 {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 1px #ef4444;
+    }
+    
+    /* Notification style for better visibility */
+    .notif {
+      padding: 1rem;
+      border-radius: 0.5rem;
+      border-left: 5px solid;
+    }
+    
+    /* --- CUSTOM BUTTON STYLES (IMPROVED) --- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem; /* Increased padding */
+      font-size: 0.875rem;
+      font-weight: 600;
+      line-height: 1.25rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
+      white-space: nowrap;
+    }
+    
+    .btn-primary {
+      color: #051622; /* Dark text for contrast */
+      background: linear-gradient(145deg, var(--accent-1), var(--accent-2));
+      border: 1px solid transparent;
+      box-shadow: 0 4px 15px rgba(123, 97, 255, 0.3);
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(145deg, #00d8e6, #8a64ff); /* Slightly lighter gradient on hover */
+      box-shadow: 0 6px 20px rgba(123, 97, 255, 0.5);
+      transform: translateY(-1px);
+    }
+    
+    .btn-primary:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+    
+    .btn-ghost {
+      color: var(--muted);
+      background-color: rgba(255, 255, 255, 0.05); /* Subtle dark background */
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: none;
+    }
+    
+    .btn-ghost:hover {
+      color: #e6eef3; /* White text on hover */
+      background-color: rgba(255, 255, 255, 0.12); /* Brighter background on hover */
+      border-color: var(--accent-1); /* Accent border on hover */
+    }
+    
+    .btn-ghost:active {
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+    /* In your CSS file (e.g., style.css or within a <style> tag) */
+
+/* General styling for form inputs */
+.form-input {
+  /* ... existing styles like border, padding, etc. ... */
+  background-color: var(--input-bg-color, #2D3748); /* Slightly lighter dark grey */
+  color: var(--input-text-color, #E2E8F0); /* Light grey text */
+  border-color: var(--input-border-color, #4A5568); /* Slightly lighter border */
+}
+
+/* Specific for select dropdowns */
+.form-input:hover,
+.form-input:focus {
+  border-color: var(--accent-color, #63B3ED); /* Example accent blue */
+  outline: none;
+  box-shadow: 0 0 0 1px var(--accent-color, #63B3ED);
+}
+  </style>
+</head>
+<body>
+  <div class="heart-bg-container" id="heart-bg-container">
+    <svg width="310" height="280" viewBox="0 0 420 320" fill="none">
+      <g>
+        <path class="heartbeat"
+          d="M210 295s-110-70-110-145c0-40 32-70 70-70 22 0 42 12 54 32 12-20 32-32 54-32 38 0 70 30 70 70 0 75-110 145-110 145z"
+          fill="#8A64FF" fill-opacity="0.13" stroke="#00d8e6" stroke-width="7"/>
+        <polyline
+          id="ecgLine"
+          points="105,195 145,195 155,155 170,225 185,115 197,205 244,205 258,177 263,190 279,135 320,195"
+          fill="none" stroke="#fff" stroke-width="5"
+          stroke-linecap="round" stroke-linejoin="round"
+          style="stroke-dasharray: 400; stroke-dashoffset: 0; filter: drop-shadow(0 0 8px #fff4);">
+          <animate attributeName="stroke-dashoffset" values="400;0" dur="1.2s" repeatCount="indefinite"/>
+        </polyline>
+      </g>
+    </svg>
+  </div>
+  <div class="mx-auto max-w-layout w-full relative z-10">
+    <div class="card p-8 lg:p-10">
+      <div class="flex items-center justify-between gap-6 mb-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[color:var(--accent-1)] to-[color:var(--accent-2)] flex items-center justify-center text-slate-900 shadow-md">
+            <i data-lucide="heart-pulse" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl font-extrabold">CardioPredict AI</h1>
+            <p class="text-sm muted">High-contrast UI · local-only storage · instant mock predictions</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-xs muted">Storage: <span class="accent-2">localStorage</span></p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div class="lg:col-span-3">
+          <form id="prediction-form" class="space-y-6" autocomplete="off" novalidate>
+            <div id="notification-message" class="hidden notif bg-slate-900 border-red-600 text-red-300 mb-2">
+              <div class="flex items-start gap-3">
+                <i data-lucide="alert-triangle" id="notification-icon" class="w-5 h-5 mt-1"></i>
+                <div>
+                  <div id="notification-text" class="text-sm font-semibold"></div>
+                </div>
+              </div>
+            </div>
+            <div class="p-6 rounded-2xl border border-slate-700 bg-[color:var(--glass)]">
+              <h2 class="text-lg font-bold mb-4">Patient Profile</h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="text-sm muted mb-2 block">Patient ID (required)</label>
+                  <input id="patient_id" name="patient_id" class="form-input" placeholder="e.g., P10023" required />
+                  <p id="patient_id-error" class="text-xs text-red-400 hidden mt-1">Patient ID is required for save/load.</p>
+                </div>
+                <div>
+                  <label class="text-sm muted mb-2 block">Age (20 - 77)</label>
+                  <input id="age" name="age" type="number" min="20" max="77" class="form-input" placeholder="52" required />
+                  <p id="age-error" class="text-xs text-red-400 hidden mt-1">Age must be between 20 and 77.</p>
+                </div>
+                <div>
+                  <label class="text-sm muted mb-2 block">Sex (0=F,1=M)</label>
+                  <select id="sex" name="sex" class="form-input" required>
+                    <option value="" disabled selected>Select Gender</option>
+                    <option value="1">1 - Male</option>
+                    <option value="0">0 - Female</option>
+                  </select>
+                  <p id="sex-error" class="text-xs text-red-400 hidden mt-1">Sex must be 0 or 1.</p>
+                </div>
+                <div>
+                  <label class="text-sm muted mb-2 block">FBS > 120 (0/1)</label>
+                  <select id="fbs" name="fbs" class="form-input" required>
+                    <option value="" disabled selected>Select Value</option>
+                    <option value="1">1 - Yes</option>
+                    <option value="0">0 - No</option>
+                  </select>
+                  <p id="fbs-error" class="text-xs text-red-400 hidden mt-1">FBS must be 0 or 1.</p>
+                </div>
+              </div>
+            </div>
+            <div class="p-6 rounded-2xl border border-slate-700 bg-[color:var(--glass)]">
+              <h2 class="text-lg font-bold mb-4">Vitals & Chemistry</h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="text-sm muted mb-2 block">Resting BP (94-200)</label>
+                  <input id="bp" name="bp" type="number" min="94" max="200" class="form-input" placeholder="140" required />
+                  <p id="bp-error" class="text-xs text-red-400 hidden mt-1">BP must be between 94 and 200.</p>
+                </div>
+                <div>
+                  <label class="text-sm muted mb-2 block">Cholesterol (126-564)</label>
+                  <input id="chol" name="chol" type="number" min="126" max="564" class="form-input" placeholder="200" required />
+                  <p id="chol-error" class="text-xs text-red-400 hidden mt-1">Cholesterol must be between 126 and 564.</p>
+                </div>
+                <div>
+                  <label class="text-sm muted mb-2 block">Max Heart Rate (71-202)</label>
+                  <input id="maxhr" name="maxhr" type="number" min="71" max="202" class="form-input" placeholder="150" required />
+                  <p id="maxhr-error" class="text-xs text-red-400 hidden mt-1">Max HR must be between 71 and 202.</p>
+                </div>
+                <div>
+                  <label class="text-sm muted mb-2 block">Chest Pain Type (0-3)</label>
+                  <select id="cp" name="cp" class="form-input" required>
+                    <option value="" disabled selected>Select CP Type</option>
+                    <option value="0">0 - Asymptomatic</option>
+                    <option value="1">1 - Atypical Angina</option>
+                    <option value="2">2 - Non-Anginal Pain</option>
+                    <option value="3">3 - Typical Angina</option>
+                  </select>
+                  <p id="cp-error" class="text-xs text-red-400 hidden mt-1">Chest Pain Type must be 0-3.</p>
+                </div>
+                <div>
+                  <label class="text-sm muted mb-2 block">Resting ECG Results (0-2)</label>
+                  <select id="ekg" name="ekg" class="form-input" required>
+                    <option value="" disabled selected>Select ECG Result</option>
+                    <option value="0">0 - Normal</option>
+                    <option value="1">1 - ST-T wave abnormality</option>
+                    <option value="2">2 - Left ventricular hypertrophy</option>
+                  </select>
+                  <p id="ekg-error" class="text-xs text-red-400 hidden mt-1">ECG must be 0-2.</p>
+                </div>
+                <div>
+                  <label class="text-sm muted mb-2 block">Exercise Angina (0=No, 1=Yes)</label>
+                  <select id="exang" name="exang" class="form-input" required>
+                    <option value="" disabled selected>Select Value</option>
+                    <option value="1">1 - Yes</option>
+                    <option value="0">0 - No</option>
+                  </select>
+                  <p id="exang-error" class="text-xs text-red-400 hidden mt-1">Exang must be 0 or 1.</p>
+                </div>
+              </div>
+            </div>
+            <div class="p-6 rounded-2xl border border-slate-700 bg-[color:var(--glass)]">
+              <h2 class="text-lg font-bold mb-4">Stress & Diagnostics</h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="text-sm muted mb-2 block">ST Depression (Oldpeak: 0.0-6.2)</label>
+                  <input id="oldpeak" name="oldpeak" type="number" step="0.1" min="0.0" max="6.2" class="form-input" placeholder="1.0" required />
+                  <p id="oldpeak-error" class="text-xs text-red-400 hidden mt-1">Oldpeak must be between 0.0 and 6.2.</p>
+                </div>
+                <div>
+                  <label class="text-sm muted mb-2 block">Slope of ST Segment (0-2)</label>
+                  <select id="slope" name="slope" class="form-input" required>
+                    <option value="" disabled selected>Select Slope</option>
+                    <option value="0">0 - Upsloping</option>
+                    <option value="1">1 - Flat</option>
+                    <option value="2">2 - Downsloping</option>
+                  </select>
+                  <p id="slope-error" class="text-xs text-red-400 hidden mt-1">Slope must be 0-2.</p>
+                </div>
+                <div>
+                  <label class="text-sm muted mb-2 block">Number of Vessels Fluro (ca: 0-3)</label>
+                  <select id="ca" name="ca" class="form-input" required>
+                    <option value="" disabled selected>Select Vessels</option>
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                  </select>
+                  <p id="ca-error" class="text-xs text-red-400 hidden mt-1">ca must be 0-3.</p>
+                </div>
+                <div>
+                  <label class="text-sm muted mb-2 block">Thallium (thal: 1-3)</label>
+                  <select id="thal" name="thal" class="form-input" required>
+                    <option value="" disabled selected>Select Thal Result</option>
+                    <option value="1">1 - Normal</option>
+                    <option value="2">2 - Fixed Defect</option>
+                    <option value="3">3 - Reversible Defect</option>
+                  </select>
+                  <p id="thal-error" class="text-xs text-red-400 hidden mt-1">Thal must be 1, 2, or 3.</p>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center gap-3 justify-center">
+              <button type="button" id="load-button" class="btn btn-ghost w-full sm:w-auto">
+                <i data-lucide="archive" class="w-4 h-4 mr-2"></i> Load Previous Report
+              </button>
+              <button type="submit" id="predict-button" class="btn btn-primary w-full sm:w-auto">
+                <i data-lucide="activity" class="w-4 h-4 mr-2"></i> Get Prediction
+              </button>
+              <button type="button" id="clear-button" class="btn btn-ghost w-full sm:w-auto">
+                <i data-lucide="trash" class="w-4 h-4 mr-2"></i> Clear Form
+              </button>
+              <button type="button" id="delete-button" class="btn btn-ghost w-full sm:w-auto">
+                <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i> Delete Saved Report
+              </button>
+            </div>
+          </form>
+        </div>
+        <div id="results-panel" class="lg:col-span-2 hidden">
+          <h3 class="text-lg font-bold mb-4">Prediction Analysis</h3>
+          <div id="prediction-result-box" class="p-6 rounded-xl pred-negative text-white mb-6">
+            <div class="text-center">
+              <h4 class="text-sm muted mb-2">Patient Status</h4>
+              <p id="prediction-text" class="text-5xl font-extrabold">—</p>
+              <p id="prediction-confidence" class="text-xs muted mt-2">Confidence Score: —</p>
+            </div>
+          </div>
+          <div class="p-5 rounded-xl bg-[color:var(--glass)] border border-slate-700">
+            <h4 class="text-sm font-semibold mb-3 muted">Model Performance (illustrative)</h4>
+            <table class="w-full text-sm muted">
+              <thead>
+                <tr>
+                  <th class="text-left pb-2">Metric</th>
+                  <th class="text-right pb-2">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="py-1">Accuracy</td>
+                  <td class="text-right font-semibold accent">89.4%</td>
+                </tr>
+                <tr>
+                  <td class="py-1">Precision</td>
+                  <td class="text-right">0.87</td>
+                </tr>
+                <tr>
+                  <td class="py-1">Recall</td>
+                  <td class="text-right">0.89</td>
+                </tr>
+                <tr>
+                  <td class="py-1">F1 (est.)</td>
+                  <td class="text-right">0.88</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 text-xs muted text-center">Report data is stored locally in your browser's <span class="accent">localStorage</span> and is not sent anywhere.</div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+  </script>
+  <script type="module">
+    const form = document.getElementById('prediction-form');
+    const resultsPanel = document.getElementById('results-panel');
+    const notificationDiv = document.getElementById('notification-message');
+    const notificationTextSpan = document.getElementById('notification-text');
+    const notificationIcon = document.getElementById('notification-icon');
+    const predictButton = document.getElementById('predict-button');
+    const loadButton = document.getElementById('load-button');
+    const clearButton = document.getElementById('clear-button');
+    const deleteButton = document.getElementById('delete-button');
+    const predictionTextBox = document.getElementById('prediction-text');
+    const predictionConfidenceBox = document.getElementById('prediction-confidence');
+    const predictionResultBox = document.getElementById('prediction-result-box');
+    
+    // Grab the heart container element
+    const heartContainer = document.getElementById('heart-bg-container'); 
+
+    const STORAGE_KEY_PREFIX = 'cardio_report_';
+
+    // Notification helper
+    function showNotification(title, message, type = 'info') {
+      notificationDiv.classList.remove('hidden', 'bg-red-900', 'border-red-500', 'text-red-400', 'bg-green-900', 'border-green-500', 'text-green-400', 'bg-blue-900', 'border-[#0079C1]', 'text-[#0079C1]');
+      if (type === 'error' || type === 'validation') {
+        notificationDiv.classList.add('bg-red-900', 'border-red-500', 'text-red-400');
+        notificationIcon.setAttribute('data-lucide', 'alert-triangle');
+      } else if (type === 'success') {
+        notificationDiv.classList.add('bg-green-900', 'border-green-500', 'text-green-400');
+        notificationIcon.setAttribute('data-lucide', 'check-circle');
+      } else {
+        notificationDiv.classList.add('bg-blue-900', 'border-[#0079C1]', 'text-[#00c2d1]');
+        notificationIcon.setAttribute('data-lucide', 'info');
+      }
+      notificationTextSpan.innerHTML = `<strong>${title}:</strong> ${message}`;
+      lucide.createIcons();
+      // auto-hide after 4s
+      clearTimeout(window._notifTimeout);
+      window._notifTimeout = setTimeout(() => notificationDiv.classList.add('hidden'), 4000);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // constraints for validation
+    const constraints = {
+      patient_id: { required: true, error: 'Patient ID is mandatory.' },
+      age: { min: 20, max: 77, error: 'Age must be between 20 and 77.' },
+      bp: { min: 94, max: 200, error: 'Resting BP must be between 94 and 200.' },
+      chol: { min: 126, max: 564, error: 'Cholesterol must be between 126 and 564.' },
+      maxhr: { min: 71, max: 202, error: 'Max HR must be between 71 and 202.' },
+      oldpeak: { min: 0.0, max: 6.2, error: 'ST Depression (Oldpeak) must be between 0.0 and 6.2.' },
+      // Categorical/Select fields
+      sex: { values: ['0','1'], error: 'Sex must be 0 or 1.' },
+      fbs: { values: ['0','1'], error: 'FBS must be 0 or 1.' },
+      cp: { values: ['0', '1', '2', '3'], error: 'Chest Pain Type must be 0-3.' },
+      ekg: { values: ['0', '1', '2'], error: 'Resting ECG must be 0-2.' },
+      exang: { values: ['0', '1'], error: 'Exercise Angina (Exang) must be 0 or 1.' },
+      slope: { values: ['0', '1', '2'], error: 'Slope of ST must be 0-2.' },
+      ca: { values: ['0', '1', '2', '3'], error: 'Number of Vessels Fluro (ca) must be 0-3.' },
+      thal: { values: ['1','2','3'], error: 'Thallium (Thal) must be 1, 2, or 3.' },
+    };
+
+    function validateForm(checkAll = true) {
+      let isValid = true;
+      notificationDiv.classList.add('hidden');
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      for (const key in constraints) {
+        if (!checkAll && key !== 'patient_id') continue; 
+        
+        const element = document.getElementById(key);
+        if (!element) continue;
+        const errorElement = document.getElementById(element.id + '-error');
+        const constraint = constraints[key];
+        const value = data[element.name] ? data[element.name].toString().trim() : '';
+        let fieldValid = true;
+
+        if (errorElement) errorElement.classList.add('hidden');
+        element.classList.remove('border-red-500', 'focus:ring-red-500');
+
+        if (value === "" || value === undefined || value === null || (constraint.required && value === "")) {
+          fieldValid = false;
+        } else if (constraint.min !== undefined && constraint.max !== undefined) {
+          const numValue = parseFloat(value);
+          if (isNaN(numValue) || numValue < constraint.min || numValue > constraint.max) {
+            fieldValid = false;
+            if (errorElement) { errorElement.textContent = constraint.error; errorElement.classList.remove('hidden'); }
+          }
+        } else if (constraint.values) {
+          if (!constraint.values.includes(value)) {
+            fieldValid = false;
+            if (errorElement) { errorElement.textContent = constraint.error; errorElement.classList.remove('hidden'); }
+          }
+        }
+
+        if (!fieldValid) {
+          isValid = false;
+          element.classList.add('border-red-500');
+        }
+      }
+
+      if (!isValid) {
+        showNotification('Validation Error', 'Please fix the highlighted fields and ensure all mandatory inputs are within range.', 'validation');
+      }
+      return isValid;
+    }
+
+    // localStorage helpers
+    async function saveReport(patientId, features, result) {
+      try {
+        const reportData = {
+          ...features,
+          prediction: result.prediction,
+          confidence: parseFloat(result.confidence),
+          timestamp: new Date().toISOString(),
+        };
+        localStorage.setItem(STORAGE_KEY_PREFIX + patientId, JSON.stringify(reportData));
+        showNotification('Report Saved!', `Prediction for Patient ID <strong>${patientId}</strong> saved locally.`, 'success');
+      } catch (e) {
+        console.error("Error saving report:", e);
+        showNotification('Save Error', 'Could not save report — localStorage may be full or disabled.', 'error');
+      }
+    }
+
+    async function loadReport(patientId) {
+      if (!patientId) { showNotification('Load Failed', 'Please enter a Patient ID to load a report.', 'error'); return null; }
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY_PREFIX + patientId);
+        if (stored) {
+          const data = JSON.parse(stored);
+          showNotification('Load Successful', `Report for <strong>${patientId}</strong> loaded.`, 'success');
+          return data;
+        } else {
+          showNotification('Load Failed', `No report found for <strong>${patientId}</strong>.`, 'error');
+          return null;
+        }
+      } catch (e) {
+        console.error("Load error:", e);
+        showNotification('Load Error', 'An error occurred while loading the report.', 'error');
+        return null;
+      }
+    }
+
+    async function deleteReport(patientId) {
+      if (!patientId) { showNotification('Delete Failed', 'Please enter a Patient ID to delete.', 'error'); return; }
+      try {
+        localStorage.removeItem(STORAGE_KEY_PREFIX + patientId);
+        showNotification('Deleted', `Local report for <strong>${patientId}</strong> removed.`, 'success');
+      } catch (e) {
+        console.error("Delete error:", e);
+        showNotification('Delete Error', 'Could not delete the report.', 'error');
+      }
+    }
+
+    // mock prediction logic
+    async function mockPrediction(data) {
+      const age = Number(data.age) || 50;
+      const chol = Number(data.chol) || 200;
+      const oldpeak = Number(data.oldpeak) || 0;
+      const cp = Number(data.cp) || 0;
+      const maxhr = Number(data.maxhr) || 120;
+      const ca = Number(data.ca) || 0;
+      const thal = Number(data.thal) || 1;
+      
+      let riskScore = 0;
+      riskScore += age * 0.01;
+      riskScore += chol * 0.005;
+      riskScore += oldpeak * 0.2;
+      riskScore += ca * 0.4;
+      if (thal > 1) riskScore += 0.5; 
+      
+      riskScore -= maxhr * 0.01;
+      riskScore -= cp * 0.1;
+
+      const randomFactor = Math.random() * 0.4 - 0.2; 
+      const finalScore = riskScore + randomFactor;
+      const prediction = finalScore > 3.0 ? 1 : 0; 
+      const confidence = (Math.random() * 0.2 + 0.7).toFixed(3); 
+
+      return new Promise(resolve => setTimeout(() => resolve({ prediction, confidence }), 700));
+    }
+
+    function displayResults(result) {
+      resultsPanel.classList.remove('hidden');
+      const statusText = result.prediction === 1 ? 'Positive' : 'Negative';
+      const boxClass = result.prediction === 1 ? 'pred-positive' : 'pred-negative';
+      predictionTextBox.textContent = statusText;
+      predictionConfidenceBox.textContent = `Confidence Score: ${ (typeof result.confidence === 'number' ? result.confidence.toFixed(3) : result.confidence) }`;
+      predictionResultBox.className = 'p-6 rounded-xl mb-6 ' + boxClass;
+    }
+
+    function populateForm(data) {
+      for (const key in data) {
+        const el = document.getElementById(key);
+        if (el) {
+          el.value = data[key].toString();
+        }
+      }
+      if (data.prediction !== undefined && data.confidence !== undefined) {
+        displayResults({ prediction: data.prediction, confidence: data.confidence });
+      } else {
+        resultsPanel.classList.add('hidden');
+      }
+    }
+
+    // Event listeners
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!validateForm(true)) return;
+
+      // 1. HIDE THE HEART BACKGROUND
+      heartContainer.classList.add('hidden-on-predict'); 
+      
+      const patientId = document.getElementById('patient_id').value.trim();
+      predictButton.innerHTML = `<i data-lucide="loader" class="w-4 h-4 mr-2 animate-spin"></i> Predicting...`;
+      predictButton.disabled = true;
+      loadButton.disabled = true;
+
+      try {
+        const formData = new FormData(form);
+        const features = Object.fromEntries(formData.entries());
+        for (const k in features) {
+          if (k !== 'patient_id') features[k] = parseFloat(features[k]);
+        }
+
+        const result = await mockPrediction(features);
+
+        displayResults(result);
+        await saveReport(patientId, features, result);
+      } catch (err) {
+        console.error("Prediction/Save Error:", err);
+        showNotification('Process Error', 'Prediction or save failed. Check console for details.', 'error');
+      } finally {
+        predictButton.innerHTML = `<i data-lucide="activity" class="w-4 h-4 mr-2"></i> Get Prediction`;
+        predictButton.disabled = false;
+        loadButton.disabled = false;
+        lucide.createIcons();
+      }
+    });
+
+    loadButton.addEventListener('click', async () => {
+      const patientIdEl = document.getElementById('patient_id');
+      const patientId = patientIdEl.value.trim();
+      if (!patientId) {
+        patientIdEl.classList.add('border-red-500');
+        showNotification('Load Error', 'Please enter a Patient ID to load.', 'error');
+        return;
+      }
+      patientIdEl.classList.remove('border-red-500');
+
+      loadButton.innerHTML = `<i data-lucide="loader" class="w-4 h-4 mr-2 animate-spin"></i> Loading...`;
+      predictButton.disabled = true;
+      loadButton.disabled = true;
+
+      try {
+        const data = await loadReport(patientId);
+        if (data) populateForm(data);
+      } catch (e) {
+        console.error("Loading failed:", e);
+        showNotification('Loading Error', 'Unexpected error during load.', 'error');
+      } finally {
+        loadButton.innerHTML = `<i data-lucide="archive" class="w-4 h-4 mr-2"></i> Load Previous Report`;
+        predictButton.disabled = false;
+        loadButton.disabled = false;
+        lucide.createIcons();
+      }
+    });
+
+    clearButton.addEventListener('click', () => {
+      form.reset();
+      resultsPanel.classList.add('hidden');
+      showNotification('Cleared', 'Form inputs were cleared.', 'info');
+      // SHOW THE HEART BACKGROUND ON CLEAR
+      heartContainer.classList.remove('hidden-on-predict'); 
+    });
+
+    deleteButton.addEventListener('click', async () => {
+      const patientId = document.getElementById('patient_id').value.trim();
+      if (!patientId) { showNotification('Delete Error', 'Please enter the Patient ID to delete.', 'error'); return; }
+      if (!confirm(`Delete local report for ${patientId}? This cannot be undone.`)) return;
+      await deleteReport(patientId);
+    });
+
+    // initialize icons (in case messages rendered)
+    lucide.createIcons();
+  </script>
+</body>
+</html>
