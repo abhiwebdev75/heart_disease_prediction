@@ -1,13 +1,45 @@
-💖 CardioPredict AI: Heart Disease Predictor⚡ Project OverviewCardioPredict AI is a lightweight, high-contrast web application designed for the instant input and prediction of heart disease risk based on patient clinical features.This project serves as a demonstration of basic web application architecture (Flask backend, HTML/CSS/JS frontend) integrating a pre-trained Machine Learning model for inference. Key design features include a sleek dark-mode UI with "glassmorphism" effects and client-side storage for reports.✨ Features13 Clinical Features: Comprehensive data input covering patient profile, vitals, and stress diagnostics (based on the standard Cleveland Heart Disease dataset).Flask Backend: Uses a simple Python backend with Flask to serve the application and manage model prediction requests.Machine Learning Integration: Loads and utilizes pre-trained Scikit-learn model (.pkl file) and StandardScaler for production-ready inference.Client-Side Storage: Uses localStorage in the browser to save and load patient reports, ensuring data privacy (data never leaves the browser).Responsive UI: Designed with Tailwind CSS for a modern, mobile-friendly interface.Interactive Design: Includes custom input styling, vibrant buttons, and a dynamic heart background that disappears upon prediction.🛠️ Technology StackAreaTechnologyPurposeBackendPython 3, FlaskServer, API routing (/predict), environment setup.Model/DataNumPy, Scikit-learn, joblibModel loading, feature scaling, and prediction.FrontendHTML5, CSS3, Tailwind CSS (CDN)Structure and utility-first styling.InteractivityVanilla JavaScript (ESM), Lucide IconsForm validation, UI state management, localStorage logic.StylingCustom CSS Variables, GlassmorphismDark theme aesthetics and high contrast.🚀 Setup and InstallationFollow these steps to get your local copy of CardioPredict AI up and running.PrerequisitesPython 3.xpip (Python package installer)Step 1: Clone the RepositoryBashgit clone <your-repo-link>
+# 💖 CardioPredict AI: Heart Disease Predictor
+
+## ⚡ Project Overview
+
+CardioPredict AI is a lightweight, high-contrast web application designed for the instant input and prediction of heart disease risk based on standard patient clinical features.
+
+This project demonstrates a basic web application architecture integrating a pre-trained Machine Learning model for inference, featuring a sleek dark-mode UI with "glassmorphism" effects and privacy-focused client-side storage for reports.
+
+---
+
+## ✨ Key Features
+
+* **13 Clinical Features:** Comprehensive data input covering patient profile, vitals, and stress diagnostics (based on the standard Cleveland Heart Disease dataset).
+* **Flask Backend:** Uses a simple Python backend with Flask to serve the application and manage model prediction requests.
+* **ML Integration:** Loads and utilizes pre-trained `Scikit-learn` model (`.pkl` file) and `StandardScaler` for production-ready inference.
+* **Data Privacy:** Uses **`localStorage`** in the browser to save and load patient reports, ensuring data never leaves the client machine.
+* **Interactive UI:** Features custom input styling, vibrant, defined buttons, and a dynamic heartbeat background that disappears upon submission.
+
+---
+
+## 🛠️ Technology Stack
+
+| Area | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Backend** | Python 3, **Flask** | Server, API routing (`/predict`), environment setup. |
+| **Model/Data** | NumPy, **Scikit-learn**, `joblib` | Model loading, feature scaling, and prediction. |
+| **Frontend** | HTML5, CSS3, **Tailwind CSS (CDN)** | Structure and utility-first styling. |
+| **Interactivity** | Vanilla JavaScript (ESM), Lucide Icons | Form validation, UI state management, localStorage logic. |
+
+---
+
+## 🚀 Setup and Installation
+
+Follow these steps to get your local copy of CardioPredict AI running.
+
+### Prerequisites
+
+1.  Python 3.x and `pip`
+2.  Pre-trained model files: `heart_disease_prediction_model.pkl` and `scaler.pkl`
+
+### Step 1: Clone the Repository
+
+```bash
+git clone heart_disease_prediction
 cd CardioPredict-AI
-Step 2: Set up the BackendInstall dependencies:Bashpip install Flask numpy joblib scikit-learn
-Model and Scaler Files:For the application to run, you must include two pre-trained model files in the root directory:heart_disease_prediction_model.pklscaler.pkl(Note: These files are required by your app.py script.)Step 3: Organize Frontend FilesEnsure your HTML file is correctly placed:Create a folder named templates in the project root.Save the final HTML code (which contains all the CSS and JS) as index.html inside the templates folder.Step 4: Run the ApplicationExecute the Flask application:Bashpython app.py
-The application will now be running on your local machine. Open your browser and navigate to:http://127.0.0.1:5000/
-📝 UsageEnter Data: Fill in all 13 patient features in the three organized cards (Profile, Vitals, Diagnostics).Validate: The client-side JavaScript performs real-time range checks and prevents submission if mandatory fields are missing or out of bounds.Predict: Click the Get Prediction button. The frontend sends the data to the Flask backend, which scales the data and returns the ML prediction.Analyze: The result panel displays the status (Presence or Absence) and the mock Confidence Score.Save/Load: Use the Patient ID field to save the current input and result locally in your browser for later retrieval.📄 File StructureCardioPredict-AI/
-├── templates/
-│   └── index.html  # All HTML, CSS, and JS (the frontend)
-├── app.py          # Flask application and ML model loading
-├── heart_disease_prediction_model.pkl  # Required ML Model file
-├── scaler.pkl      # Required Scaling object file
-└── README.md
-🤝 ContributionContributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.Fork the Project.Create your Feature Branch (git checkout -b feature/AmazingFeature).Commit your Changes (git commit -m 'Add some AmazingFeature').Push to the Branch (git push origin feature/AmazingFeature).Open a Pull Request.
